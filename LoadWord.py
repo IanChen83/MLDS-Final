@@ -37,7 +37,7 @@ noun2_file = "dataset/dictionary/data.noun"
 verb_blacklist_file = "dataset/dictionary/verb.blacklist"
 patch_add_file = "dataset/dictionary/patch.exc"
 
-dic_file = "output.dict"
+dic_file = "dataset/word_dictionary.txt"
 try:
     adj = open(adj_file, 'r')
     adj2 = open(adj2_file, 'r')
