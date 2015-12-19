@@ -24,8 +24,8 @@ class smart_dict(dict):
     def hasClass(self, key, cla):
         for x in self[key]:
             if x == cla:
-                return true
-        return false
+                return True
+        return False
 
 dic = smart_dict()    # Look-up convenience
 for x in dic_array:
@@ -41,7 +41,7 @@ def getNoun(sen, loc):
     if dic.hasClass(sen[loc], 3):
         return getNoun(sen, loc + 1)
     if len(sen) > loc + 1:
-        if dic.hasKey(sen[loc + 1], 3):
+        if dic.hasClass(sen[loc + 1], 3):
             if sen[loc + 1] != 'of':
                 return sen[loc]
             else:
@@ -116,7 +116,7 @@ for i in range(len(que)):
             r.append(sen[2])
         count += 2
     # 3. <How> + <adj> + <be-V> + <N>
-    if sen[0] == 'How' and dic.hasKey(sen[1], 0 and dic.hasKey(sen[2], 5):
+    if sen[0] == 'How' and dic.hasClass(sen[1], 0) and dic.hasClass(sen[2], 5):
         r.append(sen[0])
         r.append(getNoun(sen, 3))
         count += 2
