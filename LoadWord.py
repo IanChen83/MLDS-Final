@@ -51,7 +51,7 @@ try:
     noun = open(noun_file, 'r')
     noun2 = open(noun2_file, 'r')
 
-    verb_blacklist = open(verb_blacklist, 'r')
+    verb_blacklist = open(verb_blacklist_file, 'r')
 
     patch_add = open(patch_add_file, 'r')
 
