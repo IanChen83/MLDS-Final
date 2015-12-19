@@ -104,7 +104,7 @@ output(adv, adv2, "adv", out)
 output(verb, verb2, "verb", out)
 
 # Patching
-patch = [line.rsplit()[0].split() for line in patch_add]
+patch = [line.rsplit() for line in patch_add]
 for a in patch:
     out.write("{0} {1}\n".format(a[0], a[1]))
 
