@@ -35,7 +35,7 @@ for x in dic_array:
         dic[x[0]].append(int(x[1]))
 
 def isArt(x):
-    return dic[x][0] == 4
+    return (4 in dic[x])
 
 def getNoun(sen, loc):
     if dic.hasClass(sen[loc], 3):
@@ -116,9 +116,9 @@ for i in range(len(que)):
             r.append(sen[2])
         count += 2
     # 3. <How> + <adj> + <be-V> + <N>
-    if (sen[0] == 'How') and (dic[sen[1]] == '0') and (dic[sen[2]] == '5'):
+    if sen[0] == 'How' and dic.hasKey(sen[1], 0 and dic.hasKey(sen[2], 5):
         r.append(sen[0])
-        r.append(sen[3])
+        r.append(getNoun(sen, 3))
         count += 2
 
     if len(r) != 2:
