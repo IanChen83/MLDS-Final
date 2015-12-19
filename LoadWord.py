@@ -106,7 +106,7 @@ output(verb, verb2, "verb", out)
 # Patching
 patch = [line.rsplit()[0].split() for line in patch_add]
 for a in patch:
-    out_file.write("{0} {1}\n".format(a[0], a[1]))
+    out.write("{0} {1}\n".format(a[0], a[1]))
 
 # In out_file:
 #   <word> <label> in each line
