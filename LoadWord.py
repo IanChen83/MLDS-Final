@@ -34,7 +34,7 @@ verb2_file = "dataset/dictionary/data.verb"
 noun_file = "dataset/dictionary/noun.exc"
 noun2_file = "dataset/dictionary/data.noun"
 
-verb_blacklist_file = "dataset/dictionary/verb.blacklist"
+blacklist_file = "dataset/dictionary/blacklist.exc"
 patch_add_file = "dataset/dictionary/patch.exc"
 
 dic_file = "dataset/word_dictionary.txt"
@@ -51,7 +51,7 @@ try:
     noun = open(noun_file, 'r')
     noun2 = open(noun2_file, 'r')
 
-    verb_blacklist = open(verb_blacklist_file, 'r')
+    _blacklist = open(blacklist_file, 'r')
 
     patch_add = open(patch_add_file, 'r')
 
@@ -71,43 +71,44 @@ patch = []
 
 def add_blacklist(l, f):
     for line in f:
-        l.add(l.rstrip())
+        l.append(line.rstrip())
+    print("Block {0} words".format(len(l)))
 
-def output(f, f2, name, out_file):
+def output(f, f2, name, out_file, num):
     dic = dict()
     counter = 0
     for line in f:
         a = [x.lower() for x in line.split()]
         if a[0] not in dic:
             counter += 1
-            dic[a[0]] = 0
+            dic[a[0]] = num
         if a[1] not in dic:
             counter += 1
-            dic[a[1]] = 0
+            dic[a[1]] = num
     print("{0}: {1}".format(name, counter))
     counter = 0
     for line in f2:
         a = [x.lower() for x in line.split()]
         if a[4] not in dic:
             counter += 1
-            dic[a[4]] = 0
+            dic[a[4]] = num
     print("{0}2: {1}".format(name, counter))
     for i in blacklist:
         if i in dic:
             del dic[i]
     for i in dic:
         out_file.write("{0} {1}\n".format(i, dic[i]))
-
-output(adj, adj2, "adj", out)
-output(noun, noun2, "noun", out)
-output(adv, adv2, "adv", out)
-output(verb, verb2, "verb", out)
+add_blacklist(blacklist, _blacklist)
+output(adj, adj2, "adj", out, 0)
+output(noun, noun2, "noun", out, 3)
+output(adv, adv2, "adv", out, 1)
+output(verb, verb2, "verb", out, 2)
 
 # Patching
 patch = [line.rsplit() for line in patch_add]
 for a in patch:
     out.write("{0} {1}\n".format(a[0], a[1]))
-
+print("Patch {0} words".format(len(patch)))
 # In out_file:
 #   <word> <label> in each line
 # label:

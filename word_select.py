@@ -1,16 +1,13 @@
 import pdb
-
-que_file = open("./dataset/pack/question.train")
-miss_file = open("miss.txt", 'w')
-next(que_file)
-
-que = [l.split('\t')[2].split('"')[1].rsplit('?')[0].split() for l in que_file]
-# que data structure
-# [
-#   ['what', 'is', ...],
-#   ['how', 'many', ...],
-#   ...]
-# ]
+import sys
+from random import randrange
+# adj:  0
+# adv:  1
+# verb: 2
+# noun: 3
+# the : 4
+# be-V: 5
+# other:6
 
 dic_file = open("./dataset/word_dictionary.txt")
 dic_array = [l.split() for l in dic_file]
@@ -20,6 +17,10 @@ dic_array = [l.split() for l in dic_file]
 # ]
 class smart_dict(dict):
     def __missing__(self, key):
+        if key[0:-1] in self:
+            return self[key[0:-1]]
+        elif key[0:-2] in self:
+            return self[key[0:-2]]
         return [6]
     def hasClass(self, key, cla):
         for x in self[key]:
@@ -38,50 +39,52 @@ def isArt(x):
     return (4 in dic[x])
 
 def getNoun(sen, loc):
+    ##### The grammar of N
+    # N ->  N + n
+    #   |   the/a + N
+    #   |   N + of + N
+    #   |   adj + N
+    #   |   n
+    if len(sen) <= loc:
+        return None
     if dic.hasClass(sen[loc], 3):
-        return getNoun(sen, loc + 1)
-    if len(sen) > loc + 1:
-        if dic.hasClass(sen[loc + 1], 3):
-            if sen[loc + 1] != 'of':
-                return sen[loc]
+        if len(sen) > loc + 1:
+            if sen[loc + 1] == 'of' and len(sen) > loc + 2: # N of n
+                return getNoun(sen, loc + 2)
+            elif dic.hasClass(sen[loc + 1], 3):             # N n
+                return getNoun(sen, loc+1)
             else:
-                if len(sen) > loc + 2:
-                    return getNoun(sen, loc + 2)
-                else:
-                    return getNoun(sen,loc)
+                return sen[loc]                             # N x
+        else:
+            return sen[loc]                                 # N
+    elif dic.hasClass(sen[loc], 4):                         # the/a N
+        if len(sen) < loc + 1:
+            return sen[loc]
         else:
             return getNoun(sen, loc + 1)
+    elif dic.hasClass(sen[loc], 0):
+        if len(sen) >= loc + 1:
+            return getNoun(sen, loc + 1)
     else:
-        return sen[loc]
+        return None
 
+def getLessVerb(sen, r):
+    less_verb_count = 8
+    less_verb = None
+    for w in reversed(sen):
+        if dic.hasClass(w, 2) and len(dic[w]) < less_verb_count:
+            less_verb = w
+            less_verb_count = len(dic[w])
+    if less_verb != None:
+        r.append(less_verb)
+    
 
-#qtag = []
-#for m in que:
-    #i = []
-    #for n in m:
-        #i.append([dic[n]])
-    #qtag.append(i)
-
-ret = []
-miss = 0
-for i in range(len(que)):
-    #########
-    # 1. Answer type
-    #########
-    count = 0
-    r = []
-    # Define rules
-    sen = que[i]
-
+def rule1(sen, r):
     # 1. <Which | What | How many | How much> + <N | N of N>
-    if (sen[0] == 'Which' or sen[0] == 'What') and dic[sen[1]] == '3':
-        if sen[2] == 'of':
-            r.append(sen[0])
-            r.append(sen[4] if isArt(sen[3]) else sen[3])
-        else:
-            r.append(sen[0])
-            r.append(sen[1])
-        count += 2
+    if (sen[0] == 'Which' or sen[0] == 'What') and dic.hasClass(sen[1], 3):
+        r.append(sen[0])
+        r.append(getNoun(sen, 1))
+
     elif (sen[0] == 'How' and sen[1] == 'many') or (sen[0] == 'How' and sen[1] == 'much'):
         if len(sen) < 4:
             r.append(sen[0])
@@ -93,39 +96,123 @@ for i in range(len(que)):
             else:
                 r.append(sen[0])
                 r.append(sen[2])
-        count += 2
+    if len(r) == 2:
+        getLessVerb(sen ,r)
+#    pdb.set_trace()
 
-    # 2. <5W1H> + <be-V> + <N | N of N >
-    if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic[sen[1]] == '5':
+def rule2(sen, r):
+    # 2. <5W1H> + <be-V> + <N>
+    if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic.hasClass(sen[1], 5) and getNoun(sen, 2) != None:
         r.append(sen[0])
-        if isArt(sen[2]):
-            if len(sen) < 5:
-                if len(sen) < 4:
-                    r.append(sen[2])
-                else:
-                    r.append(sen[3])
-            else:
-                if sen[4] == 'of':
-                    if len(sen) < 5:
-                        r.append(sen [6] if isArt(sen[5]) else sen[5])
-                    else:
-                        r.append(sen[3])
-                else:
-                    r.append(sen[3])
-        else:
-            r.append(sen[2])
-        count += 2
+        r.append(getNoun(sen, 2))
+        getLessVerb(sen, r)
+#    pdb.set_trace()
+
+def rule3(sen, r):
     # 3. <How> + <adj> + <be-V> + <N>
     if sen[0] == 'How' and dic.hasClass(sen[1], 0) and dic.hasClass(sen[2], 5):
         r.append(sen[0])
         r.append(getNoun(sen, 3))
-        count += 2
+        getLessVerb(sen ,r)
 
-    if len(r) != 2:
-        #pdb.set_trace()
-        miss += 1
-        miss_file.write(' '.join(sen))
-        miss_file.write('\n')
+def rule4(sen, r):
+    # 4. <5W1H> + <aux-V> + <N> + <V>
+    if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic.hasClass(sen[1], 7) and getNoun(sen, 2) != None:
+        r.append(sen[0])
+        a = getNoun(sen, 2)
+        r.append(a)
+        idx = sen.index(a)
+        if len(sen) > idx + 1:
+            r.append(sen[idx+1])
+        else:
+            getLessVerb(sen, r)
 
+def rule5(sen, r):
+    # 5. <5W1H> + <V> + <N>
+    if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic.hasClass(sen[1], 2) and getNoun(sen, 2) != None:
+        r.append(sen[0])
+        r.append(getNoun(sen, 2))
+        r.append(sen[1])
+
+def final_rule(sen, r):
+    for w in sen:
+        w = w.lower()
+        if w == 'which' or w == 'what' or w == 'Who' or w == 'where' or w == 'why' or w == 'how':
+            r.append(w)
+            break
+    less_noun_count = 8
+    less_noun = None
+    for w in sen:
+        if dic.hasClass(w, 3) and len(dic[w]) < less_noun_count:
+            less_noun = w
+            less_noun_count = len(dic[w])
+    r.append(less_noun)
+    
+    getLessVerb(sen, r)
+#for m in que:
+    #i = []
+    #for n in m:
+        #i.append([dic[n]])
+    #qtag.append(i)
+miss = 0
+q_count = 0
+def classify(q, write_miss = True, out = None):
+    global miss, q_count
+    miss_file = None
+    if write_miss:
+        miss_file = open("miss.txt", 'w')
+    for i in range(len(q)):
+        q_count += 1
+        #########
+        # 1. Answer type
+        #########
+        count = 0
+        r = []
+        # Define rules
+        sen = q[i]
+      
+        if len(r) == 0:
+            rule1(sen, r)
+        if len(r) == 0:
+            rule2(sen, r)
+        if len(r) == 0:
+            rule3(sen, r)
+        if len(r) == 0:
+            rule4(sen, r)
+        if len(r) == 0:
+            rule5(sen, r)
+        if len(r) == 0:
+            final_rule(sen, r)
+        for i in range(3-len(r)):
+            miss += 1
+            r.append(sen[randrange(0, len(sen))].split('\'')[0].lower())
+        if len(r) != 3:
+            pdb.set_trace()
+            if write_miss:
+                miss_file.write(' '.join(sen))
+                miss_file.write('\n')
+        if out is not None:
+            out.write("{0} {1} {2}\n".format(r[0], r[1], r[2]))
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        que_file = open("./dataset/pack/question.train")
+        next(que_file)
+
+        que = [l.split('\t')[2].split('"')[1].rsplit('?')[0].split() for l in que_file]
+        # que data structure
+        # [
+        #   ['what', 'is', ...],
+        #   ['how', 'many', ...],
+        #   ...]
+        # ]
+        
+        classify(que)
+    else:
+        que_file = open("./dataset/pack/question.train")
+        next(que_file)
+
+        que = [l.split('\t')[2].split('"')[1].rsplit('?')[0].split() for l in que_file]
+        out_file = open(sys.argv[1], 'w')
+        classify(que, False, out_file)
 # To get the missing count
-print(miss)
+print("Miss count: {0} questions, miss rate: {1:.10f}".format(miss, float(miss)/float(q_count)))
