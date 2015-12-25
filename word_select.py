@@ -68,6 +68,27 @@ def getNoun(sen, loc):
     else:
         return None
 
+def getAnotherNoun(sen, avoid, r):
+    candidate = []
+    for w in sen:
+        if dic.hasClass(w, 3) == False:
+            continue
+        a = getNoun(sen, sen.index(w))
+        if a in candidate or a == None:
+            continue
+        else:
+            candidate.append(a)
+    less_noun_count = 8
+    less_noun = None
+    for w in candidate:
+        if len(dic[w]) < less_noun_count and less_noun != avoid:
+            less_noun = w
+            less_noun_count = len(dic[w])
+    if less_noun != None:
+        r.append(less_noun)
+    elif avoid != None:
+        r.append(avoid)
+
 def getLessVerb(sen, r):
     less_verb_count = 8
     less_verb = None
@@ -84,19 +105,23 @@ def rule1(sen, r):
     if (sen[0] == 'Which' or sen[0] == 'What') and dic.hasClass(sen[1], 3):
         r.append(sen[0])
         r.append(getNoun(sen, 1))
+        getAnotherNoun(sen, r[1], r)
 
     elif (sen[0] == 'How' and sen[1] == 'many') or (sen[0] == 'How' and sen[1] == 'much'):
         if len(sen) < 4:
             r.append(sen[0])
             r.append(sen[2])
+            getAnotherNoun(sen, r[1], r)
         else:
             if sen[3] == 'of':
                 r.append(sen[0])
                 r.append(sen[5] if isArt(sen[4]) else sen[4])
+                getAnotherNoun(sen, r[1], r)
             else:
                 r.append(sen[0])
                 r.append(sen[2])
-    if len(r) == 2:
+                getAnotherNoun(sen, r[1], r)
+    if len(r) == 3:
         getLessVerb(sen ,r)
 #    pdb.set_trace()
 
@@ -105,6 +130,7 @@ def rule2(sen, r):
     if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic.hasClass(sen[1], 5) and getNoun(sen, 2) != None:
         r.append(sen[0])
         r.append(getNoun(sen, 2))
+        getAnotherNoun(sen, r[1], r)
         getLessVerb(sen, r)
 #    pdb.set_trace()
 
@@ -113,6 +139,7 @@ def rule3(sen, r):
     if sen[0] == 'How' and dic.hasClass(sen[1], 0) and dic.hasClass(sen[2], 5):
         r.append(sen[0])
         r.append(getNoun(sen, 3))
+        getAnotherNoun(sen, r[1], r)
         getLessVerb(sen ,r)
 
 def rule4(sen, r):
@@ -121,6 +148,7 @@ def rule4(sen, r):
         r.append(sen[0])
         a = getNoun(sen, 2)
         r.append(a)
+        getAnotherNoun(sen, r[1], r)
         idx = sen.index(a)
         if len(sen) > idx + 1:
             r.append(sen[idx+1])
@@ -132,6 +160,7 @@ def rule5(sen, r):
     if (sen[0] == 'Which' or sen[0] == 'What' or sen[0] == 'Who' or sen[0] == 'Where' or sen[0] == 'Why' or sen[0] == 'How') and dic.hasClass(sen[1], 2) and getNoun(sen, 2) != None:
         r.append(sen[0])
         r.append(getNoun(sen, 2))
+        getAnotherNoun(sen, r[1], r)
         r.append(sen[1])
 
 def final_rule(sen, r):
@@ -146,8 +175,9 @@ def final_rule(sen, r):
         if dic.hasClass(w, 3) and len(dic[w]) < less_noun_count:
             less_noun = w
             less_noun_count = len(dic[w])
-    r.append(less_noun)
-    
+    if less_noun is not None:
+        r.append(less_noun)
+        getAnotherNoun(sen, less_noun, r)
     getLessVerb(sen, r)
 #for m in que:
     #i = []
@@ -170,7 +200,7 @@ def classify(q, write_miss = True, out = None):
         r = []
         # Define rules
         sen = q[i]
-      
+
         if len(r) == 0:
             rule1(sen, r)
         if len(r) == 0:
@@ -183,16 +213,16 @@ def classify(q, write_miss = True, out = None):
             rule5(sen, r)
         if len(r) == 0:
             final_rule(sen, r)
-        for i in range(3-len(r)):
+        for i in range(4-len(r)):
             miss += 1
             r.append(sen[randrange(0, len(sen))].split('\'')[0].lower())
-        if len(r) != 3:
+        if len(r) != 4:
             pdb.set_trace()
             if write_miss:
                 miss_file.write(' '.join(sen))
                 miss_file.write('\n')
         if out is not None:
-            out.write("{0} {1} {2}\n".format(r[0], r[1], r[2]))
+            out.write("{0} {1} {2} {3}\n".format(r[0], r[1], r[2], r[3]))
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         que_file = open("./dataset/pack/question.train")
