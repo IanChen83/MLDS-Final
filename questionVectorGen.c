@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     fclose(f);
 
     question = fopen(qef_name, "r");
-    output = fopen("dataset/word_vector.txt", "w");
+    output = fopen("dataset/word_vector_test.txt", "w");
     
     char* curline = malloc(sizeof(char) * 50);
     char* word;

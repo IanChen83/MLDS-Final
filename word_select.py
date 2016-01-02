@@ -225,7 +225,7 @@ def classify(q, write_miss = True, out = None):
             out.write("{0} {1} {2} {3}\n".format(r[0], r[1], r[2], r[3]))
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        que_file = open("./dataset/pack/question.train")
+        que_file = open("./dataset/pack/question.test")
         next(que_file)
 
         que = [l.split('\t')[2].split('"')[1].rsplit('?')[0].split() for l in que_file]
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         
         classify(que)
     else:
-        que_file = open("./dataset/pack/question.train")
+        que_file = open("./dataset/pack/question.test")
         next(que_file)
 
         que = [l.split('\t')[2].split('"')[1].rsplit('?')[0].split() for l in que_file]
